@@ -68,7 +68,7 @@ const User: React.FC = () => {
     setSelectedMenuItem("cart");
   };
   const handeluserdetail = () => {
-    setSelectedMenuItem("Userdetail");
+    setSelectedMenuItem("userdetail");
   };
   const renderContent = () => {
     switch (selectedMenuItem) {
@@ -134,7 +134,7 @@ const User: React.FC = () => {
         </Sider>
         <Layout>
           {/* <Header style={{ padding: 0, background: colorBgContainer }} /> */}
-          <Content style={{ margin: "0 16px" }}>
+          <Content>
             {/* <Breadcrumb style={{ margin: "16px 0" }}>
             <Breadcrumb.Item>User</Breadcrumb.Item>
             <Breadcrumb.Item>Bill</Breadcrumb.Item>
