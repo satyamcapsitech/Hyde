@@ -122,6 +122,7 @@ const Atndee: React.FC = () => {
   ];
   return (
     <>
+     <h2>Atndee</h2>
       <Button
         type="primary"
         onClick={() => showModal()}

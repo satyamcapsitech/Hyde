@@ -10,6 +10,7 @@ const Home: React.FC = () => {
   const handelsubmitsign = () => {
     navigate("/signup");
   };
+  
   return (
     <div className="home-container">
       <div className="image-container">

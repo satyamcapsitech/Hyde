@@ -27,7 +27,7 @@ const formItemLayout = {
   },
 };
 
-const signup: React.FC = () => {
+const Userdetail: React.FC = () => {
   const [componentVariant, setComponentVariant] =
     useState<FormProps["variant"]>("filled");
 
@@ -159,4 +159,4 @@ const signup: React.FC = () => {
   );
 };
 
-export default signup;
+export default Userdetail;

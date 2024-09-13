@@ -107,6 +107,7 @@ const SubCategoryManagement: React.FC = () => {
   };
   return (
     <>
+     <h2>Sub category</h2>
       <Button type="primary" onClick={() => showModal()} style={{ marginBottom: 16 }}>
         Add Subcategory
       </Button>

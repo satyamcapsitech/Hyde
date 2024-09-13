@@ -99,6 +99,7 @@ const CategoryManagement: React.FC = () => {
   };
   return (
     <>
+    <h2>Category</h2>
       <Button type="primary" onClick={() => showModal()} style={{ marginBottom: 16 }}>
         Add Category
       </Button>

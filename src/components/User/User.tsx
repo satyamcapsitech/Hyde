@@ -16,8 +16,10 @@ import DashBoard from "./DashBoard";
 import Starter from "./Starter";
 import Beverage from "./Beverage";
 import MainCourse from "./MainCourse";
+import Cart from "./Cart";
 import { Button, Avatar, Input } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
+import Userdetail from "./Userdetail";
 
 const { Content, Footer, Sider } = Layout;
 type MenuItem = Required<MenuProps>["items"][number];
@@ -62,6 +64,12 @@ const User: React.FC = () => {
     // Navigate to the login page
     window.location.href = "/";
   };
+  const handelcheckcart = () => {
+    setSelectedMenuItem("cart");
+  };
+  const handeluserdetail = () => {
+    setSelectedMenuItem("Userdetail");
+  };
   const renderContent = () => {
     switch (selectedMenuItem) {
       case "7":
@@ -80,13 +88,18 @@ const User: React.FC = () => {
         return <Dinner />;
       case "1":
         return <DashBoard />;
+      case "cart":
+        return <Cart />;
+      case "userdetail":
+        return <Userdetail />;
+
       default:
         return <div>Welcome to the Dashboard</div>;
     }
   };
   return (
     <>
-      <Layout style={{ minHeight: "80vh" }}>
+      <Layout style={{ minHeight: "98vh" }}>
         <Sider
           collapsible
           collapsed={collapsed}
@@ -145,22 +158,26 @@ const User: React.FC = () => {
                   type="primary"
                   icon={<ShoppingCartOutlined />}
                   style={{ marginRight: "20px" }}
+                  onClick={handelcheckcart}
                 >
                   Check Cart
                 </Button>
-                <Avatar style={{ backgroundColor: "#87d068" }}>s</Avatar>
-                
-            
-            <Button
-              type="primary"
-              icon={<LogoutOutlined />}
-              onClick={handelLogout}
-              style={{ width: "8%", marginLeft:"13px" }}
-            >
-              Logout
-            </Button>
-          </div>
-             
+                <Avatar
+                  style={{ backgroundColor: "#87d068" }}
+                  onClick={handeluserdetail}
+                >
+                  s
+                </Avatar>
+
+                <Button
+                  type="primary"
+                  icon={<LogoutOutlined />}
+                  onClick={handelLogout}
+                  style={{ width: "8%", marginLeft: "13px" }}
+                >
+                  Logout
+                </Button>
+              </div>
             }
             <div
               style={{

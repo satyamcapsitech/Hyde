@@ -144,6 +144,7 @@ const ItemManagement: React.FC = () => {
   };
   return (
     <>
+     <h2>Items</h2>
       <Button
         type="primary"
         onClick={() => showModal()}
