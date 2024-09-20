@@ -20,10 +20,10 @@ const Home: React.FC = () => {
           className="background-image"
         />
         <button onClick={handelsubmit} className="login-button">
-          Login
+          Login 
         </button>
         <button onClick={handelsubmitsign} className="login-button-1">
-          sign up
+          sign up 
         </button>
       </div>
     </div>

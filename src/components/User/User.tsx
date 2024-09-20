@@ -5,6 +5,7 @@ import {
   TeamOutlined,
   UserOutlined,
   LogoutOutlined,
+  BellOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Layout, Menu, theme } from "antd";
@@ -20,6 +21,8 @@ import Cart from "./Cart";
 import { Button, Avatar, Input } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import Userdetail from "./Userdetail";
+import Notification from "./Notification";
+
 
 const { Content, Footer, Sider } = Layout;
 type MenuItem = Required<MenuProps>["items"][number];
@@ -70,6 +73,9 @@ const User: React.FC = () => {
   const handeluserdetail = () => {
     setSelectedMenuItem("userdetail");
   };
+  const handelnotification=()=>{
+    setSelectedMenuItem("notification");
+  }
   const renderContent = () => {
     switch (selectedMenuItem) {
       case "7":
@@ -92,6 +98,8 @@ const User: React.FC = () => {
         return <Cart />;
       case "userdetail":
         return <Userdetail />;
+        case "notification":
+        return <Notification />;
 
       default:
         return <div>Welcome to the Dashboard</div>;
@@ -162,6 +170,12 @@ const User: React.FC = () => {
                 >
                   Check Cart
                 </Button>
+
+                <BellOutlined 
+                style={{marginLeft:"10px" , marginRight: "20px"}}
+                onClick={handelnotification}
+                />
+
                 <Avatar
                   style={{ backgroundColor: "#87d068" }}
                   onClick={handeluserdetail}

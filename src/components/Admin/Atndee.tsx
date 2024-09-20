@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Table,
   Button,
@@ -11,7 +12,7 @@ import {
 } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 interface Attendee {
-  key: string;
+  id: string;
   name: string;
   age: number;
   gender: "Male" | "Female" | "Other";
@@ -23,14 +24,17 @@ const Atndee: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingAttendee, setEditingAttendee] = useState<Attendee | null>(null);
   const [form] = Form.useForm();
+ 
+  const fetchAttendees = async () => {
+    try {
+      const response = await axios.get("https://localhost:7015/api/Attendees");
+      setAttendees(response.data);
+    } catch (error) {
+      message.error("Failed to load attendees");
+    }
+  };
   useEffect(() => {
-    const loadAttendees = () => {
-      const existingData = localStorage.getItem("attendees");
-      if (existingData) {
-        setAttendees(JSON.parse(existingData));
-      }
-    };
-    loadAttendees();
+    fetchAttendees();
   }, []);
   const showModal = (attendee?: Attendee) => {
     if (attendee) {
@@ -44,35 +48,42 @@ const Atndee: React.FC = () => {
     form.resetFields();
     setEditingAttendee(null);
   };
-  const handleFinish = (values: any) => {
-    let updatedAttendees;
-    if (editingAttendee) {
-      updatedAttendees = attendees.map((attendee) =>
-        attendee.key === editingAttendee.key
-          ? { ...editingAttendee, ...values }
-          : attendee
-      );
-      setEditingAttendee(null);
-    } else {
-      values.key = (attendees.length + 1).toString();
-      updatedAttendees = [...attendees, values];
+  const handleFinish = async (values: any) => {
+    const payload = {
+      id:editingAttendee?.id,
+      name: values.name,
+      age: values.age,
+      gender: values.gender,
+      idCardNo: values.idCardNo,
+      designation: values.designation,
+    };
+    try {
+      if (editingAttendee) {
+       
+        await axios.put(
+          `https://localhost:7015/api/Attendees/${editingAttendee.id}`,
+          payload
+        );
+        message.success("Attendee updated successfully!");
+      } else {
+       
+        await axios.post("https://localhost:7015/api/Attendees", payload);
+        message.success("Attendee added successfully!");
+      }
+      fetchAttendees();
+      handleCancel();
+    } catch (error) {
+      message.error("Failed to handle attendee");
     }
-    localStorage.setItem("attendees", JSON.stringify(updatedAttendees));
-    setAttendees(updatedAttendees);
-    message.success(
-      editingAttendee
-        ? "Attendee updated successfully!"
-        : "Attendee added successfully!"
-    );
-    handleCancel();
   };
-  const handleDelete = (key: string) => {
-    const updatedAttendees = attendees.filter(
-      (attendee) => attendee.key !== key
-    );
-    localStorage.setItem("attendees", JSON.stringify(updatedAttendees));
-    setAttendees(updatedAttendees);
-    message.success("Attendee deleted successfully!");
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`https://localhost:7015/api/Attendees/${id}`);
+      message.success("Attendee deleted successfully!");
+      fetchAttendees();
+    } catch (error) {
+      message.error("Failed to delete attendee");
+    }
   };
   const columns = [
     {
@@ -86,12 +97,12 @@ const Atndee: React.FC = () => {
       key: "age",
     },
     {
-      title: "gender",
+      title: "Gender",
       dataIndex: "gender",
       key: "gender",
     },
     {
-      title: "ID Card No.",
+      title: "ID Card No",
       dataIndex: "idCardNo",
       key: "idCardNo",
     },
@@ -114,7 +125,7 @@ const Atndee: React.FC = () => {
             type="link"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.key)}
+            onClick={() => handleDelete(record.id)}
           />
         </>
       ),
@@ -122,7 +133,7 @@ const Atndee: React.FC = () => {
   ];
   return (
     <>
-     <h2>Atndee</h2>
+      <h2>Staff Management</h2>
       <Button
         type="primary"
         onClick={() => showModal()}
@@ -130,7 +141,7 @@ const Atndee: React.FC = () => {
       >
         Add Staff
       </Button>
-      <Table columns={columns} dataSource={attendees} rowKey="key" />
+      <Table columns={columns} dataSource={attendees} rowKey="id" />
       <Modal
         title={editingAttendee ? "Edit Attendee" : "Add Attendee"}
         visible={isModalVisible}
@@ -160,7 +171,7 @@ const Atndee: React.FC = () => {
           </Form.Item>
           <Form.Item
             name="gender"
-            label="gender"
+            label="Gender"
             rules={[{ required: true, message: "Please select the gender" }]}
           >
             <Radio.Group>

@@ -17,30 +17,74 @@ import {
   DeleteOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
+import axios from "axios";
 interface Item {
-  key: string;
-  itemName: string;
-  category: string;
-  subCategory: string;
+  id: string;
+  name: string;
+  categoryId: string;
+  subCategoryId: string;
   price: number;
   stock: boolean;
-  imgLink: string;
+  imageUrl: string;
+}
+interface Category {
+  id: string;
+  name: string;
 }
 const ItemManagement: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [useLink, setUseLink] = useState<boolean>(false);
   const [form] = Form.useForm();
   useEffect(() => {
-    const loadItems = () => {
-      const existingData = localStorage.getItem("items");
-      if (existingData) {
-        setItems(JSON.parse(existingData));
-      }
-    };
-    loadItems();
+    fetchItems();
+    fetchCategories();
+    // fetchsubCategories();
+    fetchAllsubCategories();
   }, []);
+
+  const fetchItems = async () => {
+    try {
+      const { data } = await axios.get("https://localhost:7015/api/Item");
+
+      setItems(data);
+    } catch (error) {
+      message.error("Failed to fetch items");
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get("https://localhost:7015/api/Category");
+      setCategories(data);
+    } catch (error) {
+      message.error("Failed to fetch categories");
+    }
+  };
+
+  const fetchsubCategories = async (categoryId: string) => {
+    try {
+      const { data } = await axios.get(
+        `https://localhost:7015/api/Subcategories/category/${categoryId}`
+      );
+      setSubCategories(data);
+    } catch (error) {
+      message.error("Failed to fetch sub-categories");
+    }
+  };
+  const fetchAllsubCategories = async () => {
+    try {
+      const { data} = await axios.get(
+        `https://localhost:7015/api/Subcategories`
+      );
+      setSubCategories(data);
+    } catch (error) {
+      message.error("Failed to fetch sub-categories");
+    }
+  };
   const showModal = (item?: Item) => {
     if (item) {
       form.setFieldsValue(item);
@@ -53,45 +97,78 @@ const ItemManagement: React.FC = () => {
     form.resetFields();
     setEditingItem(null);
   };
-  const handleFinish = (values: any) => {
-    let updatedItems;
-    if (editingItem) {
-      updatedItems = items.map((item) =>
-        item.key === editingItem.key ? { ...editingItem, ...values } : item
-      );
-      setEditingItem(null);
-    } else {
-      values.key = (items.length + 1).toString();
-      updatedItems = [...items, values];
+  const handleFinish = async (values: any) => {
+    const payload = {
+      name: values.name,
+      categoryId: values.categoryId,
+      subCategoryId: values.subCategoryId,
+      price: values.price,
+      stock: values.stock,
+      imageUrl: values.imageUrl,
+    };
+    try {
+      if (editingItem) {
+        await axios.put(
+          `https://localhost:7015/api/Item/${editingItem.id}`,
+          payload
+        );
+        message.success("Item updated successfully!");
+      } else {
+        await axios.post("https://localhost:7015/api/Item", payload);
+        message.success("Item added successfully!");
+      }
+      fetchItems();
+      handleCancel();
+    } catch (error) {
+      message.error("Failed to handle item");
     }
-    localStorage.setItem("items", JSON.stringify(updatedItems));
-    setItems(updatedItems);
-    message.success(
-      editingItem ? "Item updated successfully!" : "Item added successfully!"
-    );
-    handleCancel();
   };
-  const handleDelete = (key: string) => {
-    const updatedItems = items.filter((item) => item.key !== key);
-    localStorage.setItem("items", JSON.stringify(updatedItems));
-    setItems(updatedItems);
-    message.success("Item deleted successfully!");
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`https://localhost:7015/api/Item/${id}`);
+      message.success("Item deleted successfully!");
+      fetchItems();
+    } catch (error) {
+      message.error("Failed to delete item");
+    }
+  };
+  const uploadProps = {
+    beforeUpload: (file: File) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        form.setFieldValue("imageUrl", reader.result);
+      };
+      reader.readAsDataURL(file);
+      return false;
+    },
   };
   const columns = [
     {
+      title: "Image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (imageUrl: string) => (
+        <img src={imageUrl} alt="Item" style={{ width: "50px" }} />
+      ),
+    },
+    {
       title: "Item Name",
-      dataIndex: "itemName",
-      key: "itemName",
+      dataIndex: "name",
+      key: "name",
     },
     {
       title: "Category",
-      dataIndex: "category",
-      key: "category",
+      dataIndex: "categoryId",
+      key: "categoryId",
+      render: (categoryId: string) =>
+        categories.find((cat) => cat.id === categoryId)?.name || "N/A",
     },
     {
       title: "Sub Category",
-      dataIndex: "subCategory",
-      key: "subCategory",
+      dataIndex: "subCategoryId",
+      key: "subCategoryId",
+      render: (subCategoryId: string) =>
+        subCategories.find((sub) => sub.id === subCategoryId)?.name || "N/A",
     },
     {
       title: "Price",
@@ -103,14 +180,6 @@ const ItemManagement: React.FC = () => {
       dataIndex: "stock",
       key: "stock",
       render: (stock: boolean) => (stock ? "Yes" : "No"),
-    },
-    {
-      title: "Image",
-      dataIndex: "imgLink",
-      key: "imgLink",
-      render: (imgLink: string) => (
-        <img src={imgLink} alt="Item" style={{ width: "100px" }} />
-      ),
     },
     {
       title: "Actions",
@@ -126,25 +195,15 @@ const ItemManagement: React.FC = () => {
             type="link"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.key)}
+            onClick={() => handleDelete(record.id)}
           />
         </>
       ),
     },
   ];
-  const uploadProps = {
-    beforeUpload: (file: File) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        form.setFieldValue("imgLink", reader.result);
-      };
-      reader.readAsDataURL(file);
-      return false;
-    },
-  };
   return (
     <>
-     <h2>Items</h2>
+      <h2>Items Management</h2>
       <Button
         type="primary"
         onClick={() => showModal()}
@@ -152,7 +211,7 @@ const ItemManagement: React.FC = () => {
       >
         Add Item
       </Button>
-      <Table columns={columns} dataSource={items} rowKey="key" />
+      <Table columns={columns} dataSource={items} rowKey="id" />
       <Modal
         title={editingItem ? "Edit Item" : "Add Item"}
         visible={isModalVisible}
@@ -161,34 +220,48 @@ const ItemManagement: React.FC = () => {
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
           <Form.Item
-            name="itemName"
+            name="name"
             label="Item Name"
             rules={[{ required: true, message: "Please enter the item name" }]}
           >
             <Input />
           </Form.Item>
+
           <Form.Item
-            name="category"
+            name="categoryId"
             label="Category"
             rules={[{ required: true, message: "Please select the category" }]}
           >
-            <Select>
-              <Select.Option value="Breakfast">Breakfast</Select.Option>
-              <Select.Option value="Lunch">Lunch</Select.Option>
-              <Select.Option value="Dinner">Dinner</Select.Option>
+            <Select
+              placeholder="Select a category"
+              onChange={(value) => {
+                form.setFieldValue("subCategoryId", null); // Reset subcategory field
+                fetchsubCategories(value); // Fetch subcategories based on selected category
+              }}
+            >
+              {categories.map((category) => (
+                <Select.Option key={category.id} value={category.id}>
+                  {category.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item
-            name="subCategory"
+            name="subCategoryId"
             label="Sub Category"
             rules={[
               { required: true, message: "Please select the subcategory" },
             ]}
           >
-            <Select>
-              <Select.Option value="Dosa">Dosa</Select.Option>
-              <Select.Option value="Paratha">Paratha</Select.Option>
-              <Select.Option value="Thalis">Thalis</Select.Option>
+            <Select
+              placeholder="Select a subcategory"
+              disabled={!form.getFieldValue("categoryId")}
+            >
+              {subCategories.map((subCategory) => (
+                <Select.Option key={subCategory.id} value={subCategory.id}>
+                  {subCategory.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item
@@ -219,7 +292,6 @@ const ItemManagement: React.FC = () => {
               <Radio value={false}>No</Radio>
             </Radio.Group>
           </Form.Item>
-          {/* Image Source Toggle */}
           <Form.Item label="Image Source">
             <Switch
               checked={useLink}
@@ -228,10 +300,9 @@ const ItemManagement: React.FC = () => {
               unCheckedChildren="Upload"
             />
           </Form.Item>
-          {/* Conditionally Render Image Link or Upload */}
           {useLink ? (
             <Form.Item
-              name="imgLink"
+              name="imageUrl"
               label="Image Link"
               rules={[
                 { required: true, message: "Please enter the image link" },
@@ -241,7 +312,7 @@ const ItemManagement: React.FC = () => {
             </Form.Item>
           ) : (
             <Form.Item
-              name="imgLink"
+              name="imageUrl"
               label="Image Upload"
               rules={[{ required: true, message: "Please upload an image" }]}
             >

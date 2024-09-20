@@ -1,28 +1,43 @@
 import React from "react";
 import type { FormProps } from "antd";
-import { Button, Checkbox, Form, Input } from "antd";
-import "./login.css";
+import { Button, Checkbox, Form, Input, message } from "antd";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
+import "./login.css";
 type FieldType = {
   username?: string;
   password?: string;
-  remember?: string;
+  remember?: boolean;
 };
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
+    try {
+      const response = await axios.get("https://localhost:7015/api/UserDetail");
+      const users = response.data;
 
-  const onFinish: FormProps<FieldType>["onFinish"] = (values) => {
-    console.log("Success:", values);
-    if (values.username === "123") {
-      navigate("/Admin");
-    } else if (values.username === "1234") {
-      navigate("/User");
-    } else {
-      alert("username does not exixt");
+      const user = users.find(
+        (user: { username: string; password: string; role: string }) =>
+          user.username === values.username && user.password === values.password
+      );
+      if (user) {
+        if (user.role === "Admin") {
+          navigate("/Admin");
+        } else if (user.role === "User") {
+          navigate("/User");
+        } else {
+          message.error("Invalid user role");
+        }
+      } else {
+        message.error("Invalid username or password");
+      }
+    } catch (error) {
+      message.error(
+        "Failed to fetch user details: " +
+          (error.response?.data?.message || "Unknown error")
+      );
     }
   };
-
   const onFinishFailed: FormProps<FieldType>["onFinishFailed"] = (
     errorInfo
   ) => {
@@ -47,7 +62,6 @@ const Login: React.FC = () => {
         >
           <Input />
         </Form.Item>
-
         <Form.Item<FieldType>
           label="Password"
           name="password"
@@ -55,7 +69,6 @@ const Login: React.FC = () => {
         >
           <Input.Password />
         </Form.Item>
-
         <Form.Item<FieldType>
           name="remember"
           valuePropName="checked"
@@ -63,7 +76,6 @@ const Login: React.FC = () => {
         >
           <Checkbox>Remember me</Checkbox>
         </Form.Item>
-
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
           <Button type="primary" htmlType="submit">
             Submit
@@ -73,5 +85,4 @@ const Login: React.FC = () => {
     </div>
   );
 };
-
 export default Login;

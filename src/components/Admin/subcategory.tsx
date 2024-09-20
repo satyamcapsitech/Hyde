@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -11,28 +10,52 @@ import {
   message,
   Switch,
 } from "antd";
-import { EditOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
+import axios from "axios";
 interface SubCategory {
-  key: string;
-  category: string;
-  subCategory: string;
-  imgLink: string;
+  id: string;
+  categoryId: string;
+  name: string;
+  imageUrl: string;
+}
+interface Category {
+  id: string;
+  name: string;
 }
 const SubCategoryManagement: React.FC = () => {
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingSubCategory, setEditingSubCategory] = useState<SubCategory | null>(null);
+  const [editingSubCategory, setEditingSubCategory] =
+    useState<SubCategory | null>(null);
   const [useLink, setUseLink] = useState<boolean>(false);
   const [form] = Form.useForm();
   useEffect(() => {
-    const loadSubCategories = () => {
-      const existingData = localStorage.getItem("subCategories");
-      if (existingData) {
-        setSubCategories(JSON.parse(existingData));
-      }
-    };
     loadSubCategories();
+    loadCategories();
   }, []);
+  const loadSubCategories = async () => {
+    try {
+      const { data } = await axios.get(
+        "https://localhost:7015/api/Subcategories"
+      );
+      setSubCategories(data);
+    } catch (error) {
+      message.error("Failed to fetch subcategories");
+    }
+  };
+  const loadCategories = async () => {
+    try {
+      const { data } = await axios.get("https://localhost:7015/api/Category");
+      setCategories(data);
+    } catch (error) {
+      message.error("Failed to fetch categories");
+    }
+  };
   const showModal = (subCategory?: SubCategory) => {
     if (subCategory) {
       form.setFieldsValue(subCategory);
@@ -45,70 +68,97 @@ const SubCategoryManagement: React.FC = () => {
     form.resetFields();
     setEditingSubCategory(null);
   };
-  const handleFinish = (values: any) => {
-    let updatedSubCategories;
-    if (editingSubCategory) {
-      updatedSubCategories = subCategories.map(subCategory =>
-        subCategory.key === editingSubCategory.key ? { ...editingSubCategory, ...values } : subCategory
-      );
-      setEditingSubCategory(null);
-    } else {
-      values.key = (subCategories.length + 1).toString();
-      updatedSubCategories = [...subCategories, values];
+  const handleFinish = async (values: any) => {
+    const payload = {
+      name: values.name,
+      categoryId: values.categoryId,
+      imageUrl: values.imageUrl,
+    };
+    try {
+      if (editingSubCategory) {
+        await axios.put(
+          `https://localhost:7015/api/Subcategories/${editingSubCategory.id}`,
+          payload
+        );
+        message.success("Subcategory updated successfully!");
+      } else {
+        await axios.post("https://localhost:7015/api/Subcategories", payload);
+        message.success("Subcategory added successfully!");
+      }
+      loadSubCategories();
+      handleCancel();
+    } catch (error) {
+      message.error("Failed to handle subcategory");
     }
-    localStorage.setItem("subCategories", JSON.stringify(updatedSubCategories));
-    setSubCategories(updatedSubCategories);
-    message.success(editingSubCategory ? "Subcategory updated successfully!" : "Subcategory added successfully!");
-    handleCancel();
   };
-  const handleDelete = (key: string) => {
-    const updatedSubCategories = subCategories.filter(subCategory => subCategory.key !== key);
-    localStorage.setItem("subCategories", JSON.stringify(updatedSubCategories));
-    setSubCategories(updatedSubCategories);
-    message.success("Subcategory deleted successfully!");
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`https://localhost:7015/api/Subcategories/${id}`);
+      message.success("Subcategory deleted successfully!");
+      loadSubCategories();
+    } catch (error) {
+      message.error("Failed to delete subcategory");
+    }
+  };
+  const uploadProps = {
+    beforeUpload: (file: File) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        form.setFieldValue("imageUrl", reader.result);
+      };
+      reader.readAsDataURL(file);
+      return false;
+    },
   };
   const columns = [
     {
+      title: "Image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (imageUrl: string) => (
+        <img src={imageUrl} alt="Subcategory" style={{ width: "50px" }} />
+      ),
+    },
+    {
       title: "Category",
-      dataIndex: "category",
-      key: "category",
+      dataIndex: "categoryId",
+      key: "categoryId",
+      render: (categoryId: string) =>
+        categories.find((cat) => cat.id === categoryId)?.name || "Unknown",
     },
     {
       title: "Subcategory",
-      dataIndex: "subCategory",
-      key: "subCategory",
-    },
-    {
-      title: "Image",
-      dataIndex: "imgLink",
-      key: "imgLink",
-      render: (imgLink: string) => <img src={imgLink} alt="Subcategory" style={{ width: "100px" }} />,
+      dataIndex: "name",
+      key: "name",
     },
     {
       title: "Actions",
       key: "actions",
       render: (_: any, record: SubCategory) => (
         <>
-          <Button type="link" icon={<EditOutlined />} onClick={() => showModal(record)} />
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.key)} />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => showModal(record)}
+          />
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          />
         </>
       ),
     },
   ];
-  const uploadProps = {
-    beforeUpload: (file: File) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        form.setFieldValue("imgLink", reader.result);
-      };
-      reader.readAsDataURL(file);
-      return false;
-    },
-  };
   return (
     <>
-     <h2>Sub category</h2>
-      <Button type="primary" onClick={() => showModal()} style={{ marginBottom: 16 }}>
+      <h2>Subcategory Management</h2>
+      <Button
+        type="primary"
+        onClick={() => showModal()}
+        style={{ marginBottom: 16 }}
+      >
         Add Subcategory
       </Button>
       <Table columns={columns} dataSource={subCategories} rowKey="key" />
@@ -120,24 +170,25 @@ const SubCategoryManagement: React.FC = () => {
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
           <Form.Item
-            name="category"
+            name="categoryId"
             label="Category"
             rules={[{ required: true, message: "Please select a category" }]}
           >
             <Select>
-              <Select.Option value="BreakFast">BreakFast</Select.Option>
-              <Select.Option value="Lunch">Lunch</Select.Option>
-              <Select.Option value="Dinner">Dinner</Select.Option>
+              {categories.map((category) => (
+                <Select.Option key={category.id} value={category.id}>
+                  {category.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item
-            name="subCategory"
+            name="name"
             label="Subcategory"
             rules={[{ required: true, message: "Please enter a subcategory" }]}
           >
-            <Input />
+            <Input placeholder="Enter subcategory name" />
           </Form.Item>
-      
           <Form.Item label="Image Source">
             <Switch
               checked={useLink}
@@ -146,18 +197,19 @@ const SubCategoryManagement: React.FC = () => {
               unCheckedChildren="Upload"
             />
           </Form.Item>
-         
           {useLink ? (
             <Form.Item
-              name="imgLink"
+              name="imageUrl"
               label="Image Link"
-              rules={[{ required: true, message: "Please enter the image link" }]}
+              rules={[
+                { required: true, message: "Please enter the image link" },
+              ]}
             >
               <Input placeholder="Enter image URL" />
             </Form.Item>
           ) : (
             <Form.Item
-              name="imgLink"
+              name="imageUrl"
               label="Image Upload"
               rules={[{ required: true, message: "Please upload an image" }]}
             >
@@ -177,10 +229,3 @@ const SubCategoryManagement: React.FC = () => {
   );
 };
 export default SubCategoryManagement;
-
-
-
-
-
-
-

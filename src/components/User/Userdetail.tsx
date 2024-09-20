@@ -10,7 +10,7 @@ import {
 } from "antd";
 import type { FormProps } from "antd";
 
-const { RangePicker } = DatePicker;
+const {RangePicker} = DatePicker;
 
 const formItemLayout = {
   labelCol: {

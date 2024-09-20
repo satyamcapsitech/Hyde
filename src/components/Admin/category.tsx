@@ -9,27 +9,34 @@ import {
   message,
   Switch,
 } from "antd";
-import { EditOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
+import axios from "axios";
 interface Category {
-  key: string;
+  id: string;
   category: string;
   imgLink: string;
 }
-const CategoryManagement: React.FC = () => {
+const Category: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [useLink, setUseLink] = useState<boolean>(false);
   const [form] = Form.useForm();
   useEffect(() => {
-    const loadCategories = () => {
-      const existingData = localStorage.getItem("categories");
-      if (existingData) {
-        setCategories(JSON.parse(existingData));
-      }
-    };
-    loadCategories();
+    fetchCategories();
   }, []);
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get("https://localhost:7015/api/Category");
+      setCategories(data);
+    } catch (error) {
+      message.error("Failed to fetch categories");
+    }
+  };
   const showModal = (category?: Category) => {
     if (category) {
       form.setFieldsValue(category);
@@ -42,51 +49,38 @@ const CategoryManagement: React.FC = () => {
     form.resetFields();
     setEditingCategory(null);
   };
-  const handleFinish = (values: any) => {
-    let updatedCategories;
-    if (editingCategory) {
-      updatedCategories = categories.map(category =>
-        category.key === editingCategory.key ? { ...editingCategory, ...values } : category
-      );
-      setEditingCategory(null);
-    } else {
-      values.key = (categories.length + 1).toString();
-      updatedCategories = [...categories, values];
+  const handleFinish = async (values: any) => {
+    const payload = {
+      name: values.name,
+      imageUrl: values.imageUrl,
+    };
+    try {
+      if (editingCategory) {
+        await axios.put(
+          `https://localhost:7015/api/Category/${editingCategory.id}`,
+          payload
+        );
+
+        message.success("Category updated successfully!");
+      } else {
+        await axios.post("https://localhost:7015/api/Category", payload);
+        message.success("Category added successfully!");
+      }
+      fetchCategories();
+      handleCancel();
+    } catch (error) {
+      message.error("Failed to handle category");
     }
-    localStorage.setItem("categories", JSON.stringify(updatedCategories));
-    setCategories(updatedCategories);
-    message.success(editingCategory ? "Category updated successfully!" : "Category added successfully!");
-    handleCancel();
   };
-  const handleDelete = (key: string) => {
-    const updatedCategories = categories.filter(category => category.key !== key);
-    localStorage.setItem("categories", JSON.stringify(updatedCategories));
-    setCategories(updatedCategories);
-    message.success("Category deleted successfully!");
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`https://localhost:7015/api/Category/${id}`);
+      message.success("Category deleted successfully!");
+      fetchCategories();
+    } catch (error) {
+      message.error("Failed to delete category");
+    }
   };
-  const columns = [
-    {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
-    },
-    {
-      title: "Image",
-      dataIndex: "imgLink",
-      key: "imgLink",
-      render: (imgLink: string) => <img src={imgLink} alt="Category" style={{ width: "100px" }} />,
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: Category) => (
-        <>
-          <Button type="link" icon={<EditOutlined />} onClick={() => showModal(record)} />
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.key)} />
-        </>
-      ),
-    },
-  ];
   const uploadProps = {
     beforeUpload: (file: File) => {
       const reader = new FileReader();
@@ -97,10 +91,49 @@ const CategoryManagement: React.FC = () => {
       return false;
     },
   };
+  const columns = [
+    {
+      title: "Image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (imageUrl: string) => (
+        <img src={imageUrl} alt="Category" style={{ width: "50px" }} />
+      ),
+    },
+    {
+      title: "Category",
+      dataIndex: "name",
+      key: "name",
+    },
+
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: Category) => (
+        <>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => showModal(record)}
+          />
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          />
+        </>
+      ),
+    },
+  ];
   return (
     <>
-    <h2>Category</h2>
-      <Button type="primary" onClick={() => showModal()} style={{ marginBottom: 16 }}>
+      <h2>Category Management</h2>
+      <Button
+        type="primary"
+        onClick={() => showModal()}
+        style={{ marginBottom: 16 }}
+      >
         Add Category
       </Button>
       <Table columns={columns} dataSource={categories} rowKey="key" />
@@ -112,13 +145,15 @@ const CategoryManagement: React.FC = () => {
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
           <Form.Item
-            name="category"
+            name="name"
             label="Category Name"
-            rules={[{ required: true, message: "Please enter the category name" }]}
+            rules={[
+              { required: true, message: "Please enter the category name" },
+            ]}
           >
             <Input placeholder="Enter category name" />
           </Form.Item>
-          {/* Image Source Toggle */}
+
           <Form.Item label="Image Source">
             <Switch
               checked={useLink}
@@ -127,18 +162,20 @@ const CategoryManagement: React.FC = () => {
               unCheckedChildren="Upload"
             />
           </Form.Item>
-          {/* Conditionally Render Image Link or Upload */}
+
           {useLink ? (
             <Form.Item
-              name="imgLink"
+              name="imageUrl"
               label="Image Link"
-              rules={[{ required: true, message: "Please enter the image link" }]}
+              rules={[
+                { required: true, message: "Please enter the image link" },
+              ]}
             >
               <Input placeholder="Enter image URL" />
             </Form.Item>
           ) : (
             <Form.Item
-              name="imgLink"
+              name="imageUrl"
               label="Image Upload"
               rules={[{ required: true, message: "Please upload an image" }]}
             >
@@ -157,4 +194,4 @@ const CategoryManagement: React.FC = () => {
     </>
   );
 };
-export default CategoryManagement;
+export default Category;

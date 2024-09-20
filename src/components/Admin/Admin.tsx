@@ -6,13 +6,19 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Avatar,Button, Layout, Menu, theme } from "antd";
+import { Avatar, Button, Layout, Menu, Table, theme } from "antd";
 import Atndee from "./Atndee";
 import Subcategory from "./subcategory";
 import Category from "./category";
 import Items from "./Items";
+import Notification from "./Notification";
+import Seats from "./Seats";
+import Order from "./Order";
+import UserDetail from "./UserDetail";
+import AdminDashboard from "./AdminDashboard";
 
-const {Content, Footer, Sider } = Layout;
+
+const { Content, Footer, Sider } = Layout;
 
 type MenuItem = Required<MenuProps>["items"][number];
 
@@ -38,11 +44,12 @@ const items: MenuItem[] = [
   getItem("SUBCATEGORY", "3", <UserOutlined></UserOutlined>),
 
   getItem("ITEMS", "4", <UserOutlined></UserOutlined>),
-  getItem("STAFF", "10", <UserOutlined />),
-  getItem("TAG", "11", <TeamOutlined />),
+  getItem("STAFF", "5", <UserOutlined />),
+  getItem("NOTIFICATION", "6", <TeamOutlined />),
 
-  getItem("TABLE", "12", <TeamOutlined />),
-  getItem("ORDERS", "13", <TeamOutlined />),
+  getItem("TABLE", "7", <TeamOutlined />),
+  getItem("ORDERS", "8", <TeamOutlined />),
+  getItem("ADD-DETAILS", "9", <TeamOutlined />),
 ];
 
 const Admin = () => {
@@ -55,22 +62,28 @@ const Admin = () => {
     setSelectedMenuItem(e.key);
   };
   const handelLogout = () => {
-    // Navigate to the login page
     window.location.href = "/";
   };
   const renderContent = () => {
     switch (selectedMenuItem) {
+      case "1":
+        return <AdminDashboard />;
       case "2":
         return <Category />;
       case "3":
         return <Subcategory />;
       case "4":
         return <Items />;
-      case "10":
+      case "5":
         return <Atndee />;
-      // case "2":
-      //   return <Category />;
-
+      case "6":
+        return <Notification />;
+      case "7":
+        return <Seats />;
+      case "8":
+        return <Order />;
+      case "9":
+        return <UserDetail />;
       default:
         return <div>Welcome to the Dashboard</div>;
     }
@@ -118,17 +131,17 @@ const Admin = () => {
             marginBottom: "10px",
           }}
         > */}
-                      <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  padding: "10px ",
-                  background: "#f5f5f5",
-                  marginLeft: "200px",
-                  // marginTop: "50px",
-                }}
-              >
-                {/* <Input
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            padding: "10px ",
+            background: "#f5f5f5",
+            marginLeft: "200px",
+            // marginTop: "50px",
+          }}
+        >
+          {/* <Input
                   placeholder="Search"
                   style={{ width: 500, marginRight: "300px" }}
                 />
@@ -137,20 +150,19 @@ const Admin = () => {
                   icon={<ShoppingCartOutlined />}
                   style={{ marginRight: "20px" }}
                 > */}
-                  {/* Check Cart
+          {/* Check Cart
                 </Button> */}
-                <Avatar style={{ backgroundColor: "#87d068" }}>s</Avatar>
-                
-            
-            <Button
-              type="primary"
-              icon={<LogoutOutlined />}
-              onClick={handelLogout}
-              style={{ width: "8%", marginLeft:"13px" }}
-            >
-              Logout
-            </Button>
-          </div>
+          <Avatar style={{ backgroundColor: "#87d068" }}>s</Avatar>
+
+          <Button
+            type="primary"
+            icon={<LogoutOutlined />}
+            onClick={handelLogout}
+            style={{ width: "8%", marginLeft: "13px" }}
+          >
+            Logout
+          </Button>
+        </div>
 
         <Content style={{ margin: "0 16px" }}>
           <div
